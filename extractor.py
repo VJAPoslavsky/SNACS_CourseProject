@@ -26,6 +26,7 @@ class Extractor:
         self.communities = nxcom.greedy_modularity_communities(self.graph)
         self.set_node_community(self.graph,self.communities)
         self.p_edges=list(itertools.combinations(self.nodes, 2))
+        self.p_label={e:0 for e in self.p_edges}
         print("Finished loading")
 
 
@@ -45,16 +46,17 @@ class Extractor:
                     for attribute in ordered_attributes_list:
                         attributes_list[attribute] = {}
         line = 0
-        node_feature_dataset = []
+        node_feature_dataset = np.zeros((len(p_edges), len(ordered_attributes_list) + 1))
         for pair in p_edges:
             column=0
             n1, n2  = pair
             attributes_calculator.set_nodes(n1, n2)
             for function in ordered_attributes_list:
                 parameters = attributes_list[function]
-                node_feature_dataset.append(attributes_calculator.attributes_map[function](**parameters))
-                column+=1
-            line+=1
+                node_feature_dataset[line][column] = attributes_calculator.attributes_map[function](**parameters)
+                column += 1
+            node_feature_dataset[line][-1] = self.p_label[pair]
+            line += 1
         np.save(f'split_{s}_features.npy',node_feature_dataset)
         return node_feature_dataset
 
@@ -69,21 +71,24 @@ class Extractor:
         num_cores = multiprocessing.cpu_count()#//2
         k=len(self.p_edges)//num_cores
         splits=[[i,self.p_edges[i*k:(i+1)*k]] if i<num_cores-1 else [i,self.p_edges[i*k:]] for i in range(num_cores)]
-        r=Parallel(n_jobs=num_cores)(delayed(self.get_features_inner)(s) for s in splits)
-        print(r[:10])
+        print("starting computing metrics...")
+        #parallel execution; dump resuls in npy file
+        Parallel(n_jobs=num_cores)(delayed(self.get_features_inner)(s) for s in splits)
+        print("done computing metrics")
 
-        line = 0
-        for pair in self.p_edges:
-            column=0
-            n1, n2  = pair
-            attributes_calculator.set_nodes(n1, n2)
-            for function in ordered_attributes_list:
-                parameters = attributes_list[function]
-                node_feature_dataset[line][column] = attributes_calculator.attributes_map[function](**parameters)
-                node_feature_dataset[line][-1] = 0
-                column+=1
-            line+=1
-        return node_feature_dataset
+#        line = 0
+#        for pair in self.p_edges:
+#            column=0
+#            n1, n2  = pair
+#            attributes_calculator.set_nodes(n1, n2)
+#            for function in ordered_attributes_list:
+#                parameters = attributes_list[function]
+#                node_feature_dataset[line][column] = attributes_calculator.attributes_map[function](**parameters)
+#                node_feature_dataset[line][-1] = 0
+#                column+=1
+#            line+=1
+#        return node_feature_dataset
+        return 1
 
     def get_graph_characterisitcs(self):
         return
@@ -93,10 +98,14 @@ class Extractor:
         test_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t>split_date]
         print(len(train_edges))
         print(len(test_edges))
+        for i in train_edges:
+            self.p_label[i]=1
+        for i in test_edges:
+            self.p_label[i]=1
         return train_edges, test_edges
 
 
-extractor=Extractor("data/tiny.txt")#Extractor("data/ca-cit.txt")
+extractor=Extractor("data/ca-cit.txt")
 train, test=extractor.sample()
 node_feature_dataset=extractor.get_node_features()
-print(node_feature_dataset[:10])
+print("Finished")

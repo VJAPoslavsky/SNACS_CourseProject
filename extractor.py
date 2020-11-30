@@ -9,7 +9,14 @@ import csv
 import features
 import itertools
 import multiprocessing
-from joblib import Parallel, delayed
+from multiprocessing import Process, Pool
+from joblib import Parallel, delayed, parallel_backend
+import time
+import argparse
+
+parser = argparse.ArgumentParser(description='Argumetns for the program of similar pair finding')
+parser.add_argument('-f', type=str, default="data/tiny.txt", help='file path to edgelist')
+args = parser.parse_args()
 
 class Extractor:
     def __init__(self, graph_path="", graph=None):
@@ -25,8 +32,11 @@ class Extractor:
         self.edges=list(self.graph.edges())
         #self.communities = nxcom.greedy_modularity_communities(self.graph)
         #self.set_node_community(self.graph,self.communities)
+        self.train_edges=[]
+        self.test_edges=[]
         self.p_edges=list(itertools.combinations(self.nodes, 2))
         self.p_label={e:0 for e in self.p_edges}
+        self.attributes_calculator=None
         print("Finished loading")
 
 
@@ -49,14 +59,18 @@ class Extractor:
                         attributes_list[attribute] = {}
         line = 0
         for pair in p_edges:
-            column=0
+            #column=0
             n1, n2  = pair
             attributes_calculator.set_nodes(n1, n2)
-            column_values=np.zeros(len(ordered_attributes_list)+1)
-            for function in ordered_attributes_list:
-                parameters = attributes_list[function]
-                column_values[column] = attributes_calculator.attributes_map[function](**parameters)
-                column += 1
+            column_values=np.zeros(len(ordered_attributes_list)+3)
+            fet=attributes_calculator.get_features(pair)
+            column_values[:-3]=fet
+#            for function in ordered_attributes_list:
+#                parameters = attributes_list[function]
+#                column_values[column] = attributes_calculator.attributes_map[function](**parameters)
+#                column += 1
+            column_values[-3] = n1
+            column_values[-2] = n2
             column_values[-1] = self.p_label[pair]
             line += 1
             with open(f'results/split_{s}_features.csv', 'a+') as file:
@@ -65,19 +79,24 @@ class Extractor:
         return 1
 
     def get_node_features(self):
-        attributes_calculator = features.FeatureConstructor(self.graph)
+        self.attributes_calculator = features.FeatureConstructor(self.graph)
         attributes_list={}
         if attributes_list == {}:
-                    ordered_attributes_list = attributes_calculator.attributes_map.keys()
+                    ordered_attributes_list = self.attributes_calculator.attributes_map.keys()
                     for attribute in ordered_attributes_list:
                         attributes_list[attribute] = {}
 
         num_cores = multiprocessing.cpu_count()#//2
+        #num_cores = 1
+        #self.p_edges=self.p_edges[:5000]
         k=len(self.p_edges)//num_cores
         splits=[[i,self.p_edges[i*k:(i+1)*k]] if i<num_cores-1 else [i,self.p_edges[i*k:]] for i in range(num_cores)]
         print("starting computing metrics...")
         #parallel execution; dump resuls in text file
-        Parallel(n_jobs=num_cores)(delayed(self.get_features_inner)(s) for s in splits)
+        t=time.time()#n_jobs=num_cores,prefer="threads"
+        with parallel_backend('loky', n_jobs=num_cores):
+            Parallel()(delayed(self.get_features_inner)(s) for s in splits)
+        print("time taken:",time.time()-t)
         print("done computing metrics")
 
 #        node_feature_dataset=np.zeros(len(self.p_edges),len(ordered_attributes_list))
@@ -99,18 +118,17 @@ class Extractor:
         return
 
     def sample(self,attribute_name="timestamp",split_date=1015887601):
-        train_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t<=split_date]
-        test_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t>split_date]
-        print(len(train_edges))
-        print(len(test_edges))
-        for i in train_edges:
+        self.train_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t<=split_date]
+        self.test_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t>split_date]
+        print(len(self.train_edges))
+        print(len(self.test_edges))
+        for i in self.train_edges:
             self.p_label[i]=1
-        for i in test_edges:
+        for i in self.test_edges:
             self.p_label[i]=1
-        return train_edges, test_edges
+        return self.train_edges, self.test_edges
 
-
-extractor=Extractor("data/tiny.txt")
+extractor=Extractor(args.f)
 train, test=extractor.sample()
 node_feature_dataset=extractor.get_node_features()
 print("Finished")

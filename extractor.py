@@ -1,4 +1,5 @@
 #execution script for extracting the features from a given graph
+import os
 import random
 import networkx as nx
 import networkx.algorithms.community as nxcom
@@ -13,9 +14,11 @@ from multiprocessing import Process, Pool
 from joblib import Parallel, delayed, parallel_backend
 import time
 import argparse
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='Argumetns for the program of similar pair finding')
-parser.add_argument('-f', type=str, default="data/tiny.txt", help='file path to edgelist')
+parser.add_argument('-d', type=str, default="data/", help='file path to data directory')
+parser.add_argument('-f', type=str, default="tiny.txt", help='file name of the dataset. Should be an edgelist')
 args = parser.parse_args()
 
 class Extractor:
@@ -37,6 +40,10 @@ class Extractor:
         self.p_edges=list(itertools.combinations(self.nodes, 2))
         self.p_label={e:0 for e in self.p_edges}
         self.attributes_calculator=None
+        self.attribute_name="timestamp"
+        #plt.hist(np.array(list(self.graph.edges(data=self.attribute_name))),100)
+        #plt.show()
+        self.split_date=np.percentile(np.array(list(self.graph.edges(data=self.attribute_name))),80)
         print("Finished loading")
 
 
@@ -49,7 +56,12 @@ class Extractor:
     def get_features_inner(self,inp):
         s=inp[0]
         p_edges=inp[1]
-        f=open(f'results/split_{s}_features.csv', 'w+')
+        if not os.path.exists(f'results/{args.f}'):
+            os.makedirs(f'results/{args.f}')
+            os.makedirs(f'results/{args.f}/test')
+        f=open(f'results/{args.f}/split_{s}_features.csv', 'w+')
+        f.close()
+        f=open(f'results/{args.f}/test/split_{s}_features.csv', 'w+')
         f.close()
         attributes_calculator = features.FeatureConstructor(self.graph)
         attributes_list={}
@@ -59,23 +71,36 @@ class Extractor:
                         attributes_list[attribute] = {}
         line = 0
         for pair in p_edges:
-            #column=0
-            n1, n2  = pair
-            attributes_calculator.set_nodes(n1, n2)
-            column_values=np.zeros(len(ordered_attributes_list)+3)
-            fet=attributes_calculator.get_features(pair)
-            column_values[:-3]=fet
-#            for function in ordered_attributes_list:
-#                parameters = attributes_list[function]
-#                column_values[column] = attributes_calculator.attributes_map[function](**parameters)
-#                column += 1
-            column_values[-3] = n1
-            column_values[-2] = n2
-            column_values[-1] = self.p_label[pair]
-            line += 1
-            with open(f'results/split_{s}_features.csv', 'a+') as file:
-                np.savetxt(file, [column_values], delimiter=",",fmt='%f')
-                file.close()
+            if pair in self.test_edges:
+                n1, n2  = pair
+                attributes_calculator.set_nodes(n1, n2)
+                column_values=np.zeros(len(ordered_attributes_list)+3)
+                fet=attributes_calculator.get_features(pair)
+                column_values[:-3]=fet
+                column_values[-3] = n1
+                column_values[-2] = n2
+                column_values[-1] = self.p_label[pair]
+                line += 1
+                with open(f'results/{args.f}/test/split_{s}_features.csv', 'a+') as file:
+                    np.savetxt(file, [column_values], delimiter=",",fmt='%f')
+                    file.close()
+            else:
+                n1, n2  = pair
+                attributes_calculator.set_nodes(n1, n2)
+                column_values=np.zeros(len(ordered_attributes_list)+3)
+                fet=attributes_calculator.get_features(pair)
+                column_values[:-3]=fet
+    #            for function in ordered_attributes_list:
+    #                parameters = attributes_list[function]
+    #                column_values[column] = attributes_calculator.attributes_map[function](**parameters)
+    #                column += 1
+                column_values[-3] = n1
+                column_values[-2] = n2
+                column_values[-1] = self.p_label[pair]
+                line += 1
+                with open(f'results/{args.f}/split_{s}_features.csv', 'a+') as file:
+                    np.savetxt(file, [column_values], delimiter=",",fmt='%f')
+                    file.close()
         return 1
 
     def get_node_features(self):
@@ -117,7 +142,9 @@ class Extractor:
     def get_graph_characterisitcs(self):
         return
 
-    def sample(self,attribute_name="timestamp",split_date=1015887601):
+    def sample(self,attribute_name="timestamp",split_date=0):
+        if split_date==0:
+            split_date=self.split_date
         self.train_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t<=split_date]
         self.test_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t>split_date]
         print(len(self.train_edges))
@@ -128,7 +155,7 @@ class Extractor:
             self.p_label[i]=1
         return self.train_edges, self.test_edges
 
-extractor=Extractor(args.f)
+extractor=Extractor(args.d+args.f)
 train, test=extractor.sample()
 node_feature_dataset=extractor.get_node_features()
 print("Finished")

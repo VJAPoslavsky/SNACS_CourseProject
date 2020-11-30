@@ -74,11 +74,11 @@ class Extractor:
             if pair in self.test_edges:
                 n1, n2  = pair
                 attributes_calculator.set_nodes(n1, n2)
-                column_values=np.zeros(len(ordered_attributes_list)+3)
+                column_values=np.zeros(len(ordered_attributes_list)+1)
                 fet=attributes_calculator.get_features(pair)
-                column_values[:-3]=fet
-                column_values[-3] = n1
-                column_values[-2] = n2
+                column_values[:-1]=fet
+                #column_values[-3] = n1
+                #column_values[-2] = n2
                 column_values[-1] = self.p_label[pair]
                 line += 1
                 with open(f'results/{args.f}/test/split_{s}_features.csv', 'a+') as file:
@@ -87,15 +87,15 @@ class Extractor:
             else:
                 n1, n2  = pair
                 attributes_calculator.set_nodes(n1, n2)
-                column_values=np.zeros(len(ordered_attributes_list)+3)
+                column_values=np.zeros(len(ordered_attributes_list)+1)
                 fet=attributes_calculator.get_features(pair)
-                column_values[:-3]=fet
+                column_values[:-1]=fet
     #            for function in ordered_attributes_list:
     #                parameters = attributes_list[function]
     #                column_values[column] = attributes_calculator.attributes_map[function](**parameters)
     #                column += 1
-                column_values[-3] = n1
-                column_values[-2] = n2
+                #column_values[-3] = n1
+                #column_values[-2] = n2
                 column_values[-1] = self.p_label[pair]
                 line += 1
                 with open(f'results/{args.f}/split_{s}_features.csv', 'a+') as file:

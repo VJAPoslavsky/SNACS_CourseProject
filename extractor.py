@@ -15,6 +15,7 @@ from joblib import Parallel, delayed, parallel_backend
 import time
 import argparse
 import matplotlib.pyplot as plt
+import NetworkCharacteristics
 
 parser = argparse.ArgumentParser(description='Argumetns for the program of similar pair finding')
 parser.add_argument('-d', type=str, default="data/", help='file path to data directory')
@@ -43,7 +44,8 @@ class Extractor:
         self.attribute_name="timestamp"
         #plt.hist(np.array(list(self.graph.edges(data=self.attribute_name))),100)
         #plt.show()
-        self.split_date=np.percentile(np.array(list(self.graph.edges(data=self.attribute_name))),80)
+        self.timestamps=np.array(list(self.graph.edges(data=self.attribute_name)))
+        self.timesplit=np.percentile(self.timestamps,80)
         print("Finished loading")
 
 
@@ -144,11 +146,11 @@ class Extractor:
 
     def sample(self,attribute_name="timestamp",split_date=0):
         if split_date==0:
-            split_date=self.split_date
+            split_date=self.timesplit
         self.train_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t<=split_date]
         self.test_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t>split_date]
-        print(len(self.train_edges))
-        print(len(self.test_edges))
+        print("Length train set",len(self.train_edges))
+        print("Length test set",len(self.test_edges))
         for i in self.train_edges:
             self.p_label[i]=1
         for i in self.test_edges:
@@ -157,5 +159,9 @@ class Extractor:
 
 extractor=Extractor(args.d+args.f)
 train, test=extractor.sample()
+netchars_full=NetworkCharacteristics.NetworkCharacteristics(graph=extractor.graph,timesplit=np.max(extractor.timestamps))
+netchars_train=NetworkCharacteristics.NetworkCharacteristics(graph=extractor.graph,timesplit=extractor.timesplit)
+train_char,char=netchars_train.extract_characteristics(args.f),netchars_full.extract_characteristics(args.f)
+print("computed charachterisitcs")
 node_feature_dataset=extractor.get_node_features()
 print("Finished")

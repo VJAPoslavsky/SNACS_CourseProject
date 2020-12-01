@@ -3,9 +3,10 @@ import random
 import numpy as np
 import pandas as pd
 import itertools
+import os
 
 class NetworkCharacteristics:
-    def __init__(self,graph):
+    def __init__(self,graph_path="",timesplit=1991,graph=None):
         self.functions = [
             self.number_of_nodes,
             self.number_of_edges,
@@ -25,7 +26,7 @@ class NetworkCharacteristics:
             self.number_of_triangles,
             self.cluster_transitivity,
             self.connectivity,
-            k_components,
+            self.k_components,
             self.average_betweenness_centrality,
             self.average_degree_centrality,
             self.average_eigenvector_centrality,
@@ -37,10 +38,16 @@ class NetworkCharacteristics:
             self.average_eccentricity,
             self.eccentricity
         ]
+        if graph_path!="":
+            print("Load graph...")
+            f=open(graph_path)
+            content=f.read().split("\n")
+            graph=nx.read_edgelist(content, delimiter=" ", nodetype=int, data=(('weight',int),('timestamp',int)))
         self.graph=graph
         self.nodes=list(self.graph.nodes())
         self.edges=list(self.graph.edges())
         self.timesplit=timesplit
+        self.f="DBLP"
         #self.p_edges=list(itertools.combinations(self.nodes, 2))
         #self.p_label={e:0 for e in self.p_edges}
 
@@ -121,7 +128,7 @@ class NetworkCharacteristics:
         return nx.k_components(self.graph)
 
     def average_betweenness_centrality(self):
-        betweenness_centrality = nx.betweenness_centrality(self.graph, normalized=True, k=1000)
+        betweenness_centrality = nx.betweenness_centrality(self.graph, normalized=True, k=min(1000,len(self.nodes)))
         betweenness_centrality = np.fromiter(betweenness_centrality.values(), dtype=float)
         return np.mean(betweenness_centrality)
 
@@ -194,16 +201,19 @@ class NetworkCharacteristics:
         df = pd.DataFrame(columns=columns)
         return df
 
-    def extract_characteristics(self):
+    def extract_characteristics(self,f="DBLP"):
         df = self.initialize_characteristics_df()
+        self.f=f
+        if not os.path.exists(f'results/{f}'):
+            os.makedirs(f'results/{f}')
         df_row = []
         for func in self.functions:
             result = func()
             df_row.append(result)
         df_row.insert(0, self.timesplit)
         df = df.append(dict(zip(df.columns, df_row)), ignore_index=True)
-        df.to_csv('Results/Characteristics_DBLP_Timesplit_' + str(self.timesplit) + '.csv', index=False)
+        df.to_csv(f'results/{f}/Characteristics_Timesplit_' + str(self.timesplit) + '.csv', index=False)
         return df
 
-netchars = NetworkCharacteristics(graph_path='Datasets/Collaboration/DBLP_Graph.csv', timesplit=1991)
-characteristics = netchars.extract_characteristics()
+#netchars = NetworkCharacteristics(graph_path='Datasets/Collaboration/DBLP_Graph.csv', timesplit=1991)
+#characteristics = netchars.extract_characteristics()

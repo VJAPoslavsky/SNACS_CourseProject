@@ -79,10 +79,20 @@ class FeatureConstructor:
         return neighbors - set([node])
 
     def common_neighbors(self):
-        return len(self.neighbors_1.intersection(self.neighbors_2))
+        intersection=self.neighbors_1.intersection(self.neighbors_2)
+        w=0
+        for i in list(intersection):
+            w+=self.graph.edges[[self.node_1,i]]["weight"]
+            w+=self.graph.edges[[self.node_2,i]]["weight"]
+        return w
 
     def sum_of_neighbors(self):
-        return len(self.neighbors_1) + len(self.neighbors_2)
+        w=0
+        for i in self.neighbors_1:
+            w+=self.graph.edges[[self.node_1,i]]["weight"]
+        for i in self.neighbors_2:
+            w+=self.graph.edges[[self.node_2,i]]["weight"]
+        return w
 
     def jaccard_coefficient (self):
         try:
@@ -140,7 +150,6 @@ class FeatureConstructor:
     def sum_of_papers(self, graph, node_1, node_2):
         papers_1 = self.all_papers(graph, node_1)
         papers_2 = self.all_papers(graph, node_2)
-
         return papers_1 + papers_2
 
     def coefficient_clustering_sum(self):
@@ -165,7 +174,7 @@ class FeatureConstructor:
 
     def average_neighbor_degree_sum(self):
         if (self.average_neighbor_degree_dict == None):
-            self.average_neighbor_degree_dict = nx.average_neighbor_degree(self.graph)
+            self.average_neighbor_degree_dict = nx.average_neighbor_degree(self.graph, weight="weight")
             time.sleep(1)
         return self.average_neighbor_degree_dict[self.node_1] + self.average_neighbor_degree_dict[self.node_2]
 
@@ -189,7 +198,7 @@ class FeatureConstructor:
             for path in nx.all_shortest_paths(self.graph, source=self.node_1, target=self.node_2):
                 path_edges = self.get_edges_from_path(path)
                 shortest_paths_edges.append(path_edges)
-                self.graph.remove_edges_from(path_edges)
+                #self.graph.remove_edges_from(path_edges)
 
             try:
                 second_shortest_path_length = nx.shortest_path_length(self.graph, self.node_1, self.node_2)

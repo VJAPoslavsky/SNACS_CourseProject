@@ -31,7 +31,7 @@ class Extractor:
             #content=[e.split(" ") for e in content]
             print(content[:10])
             graph=nx.read_edgelist(content, delimiter=" ", nodetype=int, data=(('weight',int),('timestamp',int)))
-        self.graph=graph
+        self.graph=graph.to_undirected()
         self.train_graph=self.graph.copy()
         self.nodes=list(self.graph.nodes())
         self.edges=list(self.graph.edges())
@@ -152,7 +152,7 @@ class Extractor:
 if __name__ == "__main__":
     extractor=Extractor(args.d+args.f)
     train, test=extractor.sample()
-    extractor.page_rank=nx.pagerank_numpy(extractor.train_graph)
+    extractor.page_rank=nx.pagerank_numpy(extractor.train_graph,weight="weight")
     netchars_train=NetworkCharacteristics.NetworkCharacteristics(graph=extractor.train_graph,timesplit=extractor.timesplit)
     #netchars_full=NetworkCharacteristics.NetworkCharacteristics(graph=extractor.graph,timesplit=np.max(extractor.timestamps))
     train_char=netchars_train.extract_characteristics(args.f)
@@ -160,6 +160,6 @@ if __name__ == "__main__":
     extractor.communities = nxcom.greedy_modularity_communities(extractor.train_graph)
     extractor.set_node_community(extractor.train_graph,extractor.communities)
     #print(extractor.page_rank)
-    print("computed charachterisitcs")
+    print("computed characteristics")
     node_feature_dataset=extractor.get_node_features()
     print("Finished")

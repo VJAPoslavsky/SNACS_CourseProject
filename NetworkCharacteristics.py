@@ -206,6 +206,7 @@ class NetworkCharacteristics:
         self.f=f
         if not os.path.exists(f'results/{f}'):
             os.makedirs(f'results/{f}')
+            #os.makedirs(f'results/{f}/positive')
         df_row = []
         for func in self.functions:
             result = func()

@@ -32,10 +32,9 @@ class Extractor:
             print(content[:10])
             graph=nx.read_edgelist(content, delimiter=" ", nodetype=int, data=(('weight',int),('timestamp',int)))
         self.graph=graph
+        self.train_graph=self.graph.copy()
         self.nodes=list(self.graph.nodes())
         self.edges=list(self.graph.edges())
-        #self.communities = nxcom.greedy_modularity_communities(self.graph)
-        #self.set_node_community(self.graph,self.communities)
         self.train_edges=[]
         self.test_edges=[]
         self.p_edges=list(itertools.combinations(self.nodes, 2))
@@ -46,6 +45,7 @@ class Extractor:
         #plt.show()
         self.timestamps=np.array(list(self.graph.edges(data=self.attribute_name)))
         self.timesplit=np.percentile(self.timestamps,80)
+        self.page_rank=None
         print("Finished loading")
 
 
@@ -60,12 +60,12 @@ class Extractor:
         p_edges=inp[1]
         if not os.path.exists(f'results/{args.f}'):
             os.makedirs(f'results/{args.f}')
-            os.makedirs(f'results/{args.f}/test')
+            #os.makedirs(f'results/{args.f}/positive')
         f=open(f'results/{args.f}/split_{s}_features.csv', 'w+')
         f.close()
-        f=open(f'results/{args.f}/test/split_{s}_features.csv', 'w+')
-        f.close()
-        attributes_calculator = features.FeatureConstructor(self.graph)
+        #f=open(f'results/{args.f}/positive/split_{s}_features.csv', 'w+')
+        #f.close()
+        attributes_calculator = features.FeatureConstructor(self.train_graph,self.page_rank)
         attributes_list={}
         if attributes_list == {}:
                     ordered_attributes_list = attributes_calculator.attributes_map.keys()
@@ -81,24 +81,22 @@ class Extractor:
                 column_values[:-1]=fet
                 #column_values[-3] = n1
                 #column_values[-2] = n2
-                column_values[-1] = self.p_label[pair]
+                column_values[-1] = 1#self.p_label[pair]
                 line += 1
-                with open(f'results/{args.f}/test/split_{s}_features.csv', 'a+') as file:
+                with open(f'results/{args.f}/split_{s}_features.csv', 'a+') as file:
                     np.savetxt(file, [column_values], delimiter=",",fmt='%f')
                     file.close()
+            elif pair in self.train_edges:
+                continue
             else:
                 n1, n2  = pair
                 attributes_calculator.set_nodes(n1, n2)
                 column_values=np.zeros(len(ordered_attributes_list)+1)
                 fet=attributes_calculator.get_features(pair)
                 column_values[:-1]=fet
-    #            for function in ordered_attributes_list:
-    #                parameters = attributes_list[function]
-    #                column_values[column] = attributes_calculator.attributes_map[function](**parameters)
-    #                column += 1
                 #column_values[-3] = n1
                 #column_values[-2] = n2
-                column_values[-1] = self.p_label[pair]
+                column_values[-1] = 0#self.p_label[pair]
                 line += 1
                 with open(f'results/{args.f}/split_{s}_features.csv', 'a+') as file:
                     np.savetxt(file, [column_values], delimiter=",",fmt='%f')
@@ -106,13 +104,6 @@ class Extractor:
         return 1
 
     def get_node_features(self):
-        self.attributes_calculator = features.FeatureConstructor(self.graph)
-        attributes_list={}
-        if attributes_list == {}:
-                    ordered_attributes_list = self.attributes_calculator.attributes_map.keys()
-                    for attribute in ordered_attributes_list:
-                        attributes_list[attribute] = {}
-
         num_cores = multiprocessing.cpu_count()#//2
         #num_cores = 1
         #self.p_edges=self.p_edges[:5000]
@@ -149,6 +140,7 @@ class Extractor:
             split_date=self.timesplit
         self.train_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t<=split_date]
         self.test_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t>split_date]
+        self.train_graph.remove_edges_from(self.test_edges)
         print("Length train set",len(self.train_edges))
         print("Length test set",len(self.test_edges))
         for i in self.train_edges:
@@ -157,11 +149,17 @@ class Extractor:
             self.p_label[i]=1
         return self.train_edges, self.test_edges
 
-extractor=Extractor(args.d+args.f)
-train, test=extractor.sample()
-netchars_full=NetworkCharacteristics.NetworkCharacteristics(graph=extractor.graph,timesplit=np.max(extractor.timestamps))
-netchars_train=NetworkCharacteristics.NetworkCharacteristics(graph=extractor.graph,timesplit=extractor.timesplit)
-train_char,char=netchars_train.extract_characteristics(args.f),netchars_full.extract_characteristics(args.f)
-print("computed charachterisitcs")
-node_feature_dataset=extractor.get_node_features()
-print("Finished")
+if __name__ == "__main__":
+    extractor=Extractor(args.d+args.f)
+    train, test=extractor.sample()
+    extractor.page_rank=nx.pagerank_numpy(extractor.train_graph)
+    netchars_train=NetworkCharacteristics.NetworkCharacteristics(graph=extractor.train_graph,timesplit=extractor.timesplit)
+    #netchars_full=NetworkCharacteristics.NetworkCharacteristics(graph=extractor.graph,timesplit=np.max(extractor.timestamps))
+    train_char=netchars_train.extract_characteristics(args.f)
+    #full_char=netchars_full.extract_characteristics(args.f)
+    extractor.communities = nxcom.greedy_modularity_communities(extractor.train_graph)
+    extractor.set_node_community(extractor.train_graph,extractor.communities)
+    #print(extractor.page_rank)
+    print("computed charachterisitcs")
+    node_feature_dataset=extractor.get_node_features()
+    print("Finished")

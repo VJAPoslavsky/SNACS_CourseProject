@@ -9,5 +9,5 @@ parser.add_argument('-d', type=str, default="data/", help='file path to data dir
 parser.add_argument('-f', type=str, default="tiny.txt", help='file name of the dataset. Should be an edgelist')
 args = parser.parse_args()
 
-netchars=NetworkCharacteristics.NetworkCharacteristics(graph_path=args.d+args.f, timesplit=1991)
-characteristics = netchars.extract_characteristics(args.f)
+#netchars=NetworkCharacteristics.NetworkCharacteristics(graph_path=args.d+args.f, timesplit=1991)
+#characteristics = netchars.extract_characteristics(args.f)

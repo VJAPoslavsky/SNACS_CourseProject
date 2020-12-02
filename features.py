@@ -14,7 +14,7 @@ class FeatureConstructor:
 
     This class calculates topological attributes for a defined pair of vertices, based on the structure of the provided graph.
     """
-    def __init__(self, graph, node_1=None, node_2=None):
+    def __init__(self, graph, page_rank=None, node_1=None, node_2=None):
         self.graph = graph
         self.node_1 = node_1
         self.node_2 = node_2
@@ -26,6 +26,7 @@ class FeatureConstructor:
         self.eigenvector_centrality_dict = None
         self.closeness_vitality_dict = None
         self.core_number_dict = None
+        self.page_rank= page_rank
 
 
         self.attributes_map = {
@@ -34,8 +35,8 @@ class FeatureConstructor:
             "resource_allocation": self.resource_allocation,
             "adamic_adar_similarity": self.adamic_adar_similarity,
             "preferential_attachment": self.preferential_attachment,
-            #"cn_soundarajan_hopcroft": self.cn_soundarajan_hopcroft,
-            #"ra_index_soundarajan_hopcroft":self.ra_index_soundarajan_hopcroft,
+            "cn_soundarajan_hopcroft": self.cn_soundarajan_hopcroft,
+            "ra_index_soundarajan_hopcroft":self.ra_index_soundarajan_hopcroft,
             "betweenness_centrality": self.betweenness_centrality,
             "closeness_centrality_sum": self.closeness_centrality_sum,
             "average_clustering_coefficient": self.average_clustering_coefficient,
@@ -46,12 +47,9 @@ class FeatureConstructor:
             "get_second_shortest_path_length": self.get_second_shortest_path_length,
             "cosine": self.cosine,
             "katz_measure": self.katz_measure,
-            #"square_clustering_coefficient_sum": self.square_clustering_coefficient_sum,
-            #"load_vitality_sum": self.load_centrality_sum,
-            #"communicability_centrality_sum": self.communicability_centrality_sum,
+            "mean_page_rank":self.mean_page_rank,
+            "max_page_rank":self.max_page_rank
             #"eigenvector_centrality_sum": self.eigenvector_centrality_sum,
-            #"closeness_vitality_sum": self.closeness_vitality_sum,
-            #"core_number_sum": self.core_number_sum
         }
 
         if(self.node_1 != None and self.node_2 != None):
@@ -65,7 +63,7 @@ class FeatureConstructor:
         self.node_2 = node_2
         self.neighbors_1 = self.all_neighbors(self.node_1)
         self.neighbors_2 = self.all_neighbors(self.node_2)
-        res=[self.common_neighbors(),self.jaccard_coefficient(),self.resource_allocation(),self.adamic_adar_similarity(),self.preferential_attachment(),self.betweenness_centrality(),self.closeness_centrality_sum(),self.average_clustering_coefficient(),self.average_neighbor_degree_sum(),self.clustering_coefficient_sum(),self.sum_of_neighbors(),self.get_shortest_path_length(),self.get_second_shortest_path_length(),self.cosine(),self.katz_measure()]
+        res=[self.common_neighbors(),self.jaccard_coefficient(),self.resource_allocation(),self.adamic_adar_similarity(),self.preferential_attachment(),self.cn_soundarajan_hopcroft(),self.ra_index_soundarajan_hopcroft(),self.betweenness_centrality(),self.closeness_centrality_sum(),self.average_clustering_coefficient(),self.average_neighbor_degree_sum(),self.clustering_coefficient_sum(),self.sum_of_neighbors(),self.get_shortest_path_length(),self.get_second_shortest_path_length(),self.cosine(),self.katz_measure(),self.mean_page_rank(),self.max_page_rank()]
         return res
 
     def set_nodes(self, node_1, node_2):
@@ -203,6 +201,12 @@ class FeatureConstructor:
         except:
             pass
         return second_shortest_path_length
+
+    def mean_page_rank(self):
+        return (self.page_rank[self.node_1]+self.page_rank[self.node_2])/2
+
+    def max_page_rank(self):
+        return max(self.page_rank[self.node_1],self.page_rank[self.node_2])
 
     def get_edges_from_path(self, path):
         return [(path[node], path[node+1]) for node in range(len(path) -1)]

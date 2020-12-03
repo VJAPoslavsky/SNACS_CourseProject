@@ -33,9 +33,14 @@ def split_data(df):
     dev, test = train_test_split(test, test_size=0.33)
     return train,dev,test
 
-def classify(df):
+def train_classifier(df):
+    return model
+
+def classify(model,df):
     return
 
 if __name__ == "__main__":
     df=collect_data(args.d+args.f)
     train,dev,test=split_data(df)
+    model=train_classifier(train)
+    classify(model,test)

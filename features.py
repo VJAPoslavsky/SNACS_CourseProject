@@ -14,7 +14,7 @@ class FeatureConstructor:
 
     This class calculates topological attributes for a defined pair of vertices, based on the structure of the provided graph.
     """
-    def __init__(self, graph, page_rank=None, node_1=None, node_2=None):
+    def __init__(self, graph=None, page_rank=None, node_1=None, node_2=None):
         self.graph = graph
         self.node_1 = node_1
         self.node_2 = node_2

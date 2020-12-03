@@ -26,6 +26,7 @@ class FeatureConstructor:
         self.eigenvector_centrality_dict = None
         self.closeness_vitality_dict = None
         self.core_number_dict = None
+        self.simple_paths=None
         self.page_rank= page_rank
 
 
@@ -121,17 +122,6 @@ class FeatureConstructor:
     def ra_index_soundarajan_hopcroft(self):
         return list(nx.ra_index_soundarajan_hopcroft(self.graph, [(self.node_1, self.node_2)]))[0][2]
 
-    def katz_measure(self, beta = 0.85, min_length = 3):
-        measure = 0
-        try:
-            sp=get_shortest_path_length()
-        except:
-            sp=-1
-        if sp >= min_length:
-            for i in nx.all_simple_paths(self.graph, self.node_1, self.node_2, min_length):
-                measure += beta**len(i) * len(i)
-        return measure
-
     def cosine(self):
         try:
             return self.common_neighbors() / self.preferential_attachment()
@@ -186,30 +176,29 @@ class FeatureConstructor:
 
     def get_shortest_path_length(self):
         try:
-            sp=nx.shortest_path_length(self.graph, source=self.node_1, target=self.node_2)
+            self.simple_paths=list(nx.shortest_simple_paths(self.graph, source=self.node_1, target=self.node_2, weight=None))
+            sp=len(self.simple_paths[0])-1
         except:
             sp=-1
         return sp
 
     def get_second_shortest_path_length(self):
-        shortest_paths_edges = []
-        second_shortest_path_length = -1
         try:
-            for path in nx.all_shortest_paths(self.graph, source=self.node_1, target=self.node_2):
-                path_edges = self.get_edges_from_path(path)
-                shortest_paths_edges.append(path_edges)
-                #self.graph.remove_edges_from(path_edges)
-
-            try:
-                second_shortest_path_length = nx.shortest_path_length(self.graph, self.node_1, self.node_2)
-            except:
-                pass
-            finally:
-                for path in shortest_paths_edges:
-                    self.graph.add_edges_from(path)
+            sp=len(self.simple_paths[1])-1
         except:
-            pass
-        return second_shortest_path_length
+            sp=-1
+        return sp
+
+    def katz_measure(self, beta = 0.85, min_length = 2):
+        measure = 0
+        try:
+            sp=get_shortest_path_length()
+        except:
+            sp=-1
+        if sp >= min_length:
+            for i in self.simple_paths:
+                measure += beta**(len(i)-1) * (len(i)-1)
+        return measure
 
     def mean_page_rank(self):
         return (self.page_rank[self.node_1]+self.page_rank[self.node_2])/2

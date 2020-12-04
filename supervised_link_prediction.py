@@ -8,6 +8,9 @@ import features
 import argparse
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from sklearn import tree
 
 parser = argparse.ArgumentParser(description='Argumetns for the program of similar pair finding')
 parser.add_argument('-d', type=str, default="./results/", help='file path to data directory')
@@ -24,7 +27,7 @@ def collect_data(file_path):
     ordered_attributes_list.append("class")
     print(ordered_attributes_list)
     df = pd.concat([pd.read_csv(f,sep=",",names = ordered_attributes_list) for f in all_files])
-    print(df)
+    #print(df)
     #df["sum_of_neighbors"].hist(bins=100)
     return df
 
@@ -34,13 +37,22 @@ def split_data(df):
     return train,dev,test
 
 def train_classifier(df):
+    X,y=df[df.columns[:-1]],df["class"]
+    #model = RandomForestClassifier(random_state=42)
+    model = tree.DecisionTreeClassifier()
+    model.fit(X, y)
+    text_representation = tree.export_text(model,feature_names=list(X.columns))
+    print(text_representation)
     return model
 
 def classify(model,df):
-    return
+    X,y=df[df.columns[:-1]],df["class"]
+    y_pred=model.predict(X)
+    print(classification_report(y, y_pred, labels=[0,1]))
+    return y_pred
 
 if __name__ == "__main__":
     df=collect_data(args.d+args.f)
     train,dev,test=split_data(df)
     model=train_classifier(train)
-    classify(model,test)
+    pred=classify(model,test)

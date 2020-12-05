@@ -106,7 +106,6 @@ class FeatureConstructor:
         for neighbor in self.neighbors_1.intersection(self.neighbors_2):
             secondary_neighbors = self.all_neighbors(neighbor)
             measure += 1 / (np.log10(len(secondary_neighbors)))
-
         return measure
 
     def resource_allocation(self):

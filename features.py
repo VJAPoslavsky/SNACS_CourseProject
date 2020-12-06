@@ -36,8 +36,8 @@ class FeatureConstructor:
             "resource_allocation": self.resource_allocation,
             "adamic_adar_similarity": self.adamic_adar_similarity,
             "preferential_attachment": self.preferential_attachment,
-            "cn_soundarajan_hopcroft": self.cn_soundarajan_hopcroft,
-            "ra_index_soundarajan_hopcroft":self.ra_index_soundarajan_hopcroft,
+            #"cn_soundarajan_hopcroft": self.cn_soundarajan_hopcroft,
+            #"ra_index_soundarajan_hopcroft":self.ra_index_soundarajan_hopcroft,
             "betweenness_centrality": self.betweenness_centrality,
             "closeness_centrality_sum": self.closeness_centrality_sum,
             "average_clustering_coefficient": self.average_clustering_coefficient,
@@ -64,7 +64,7 @@ class FeatureConstructor:
         self.node_2 = node_2
         self.neighbors_1 = self.all_neighbors(self.node_1)
         self.neighbors_2 = self.all_neighbors(self.node_2)
-        res=[self.common_neighbors(),self.jaccard_coefficient(),self.resource_allocation(),self.adamic_adar_similarity(),self.preferential_attachment(),self.cn_soundarajan_hopcroft(),self.ra_index_soundarajan_hopcroft(),self.betweenness_centrality(),self.closeness_centrality_sum(),self.average_clustering_coefficient(),self.average_neighbor_degree_sum(),self.clustering_coefficient_sum(),self.sum_of_neighbors(),self.get_shortest_path_length(),self.get_second_shortest_path_length(),self.cosine(),self.katz_measure(),self.mean_page_rank(),self.max_page_rank()]
+        res=[self.common_neighbors(),self.jaccard_coefficient(),self.resource_allocation(),self.adamic_adar_similarity(),self.preferential_attachment(),self.betweenness_centrality(),self.closeness_centrality_sum(),self.average_clustering_coefficient(),self.average_neighbor_degree_sum(),self.clustering_coefficient_sum(),self.sum_of_neighbors(),self.get_shortest_path_length(),self.get_second_shortest_path_length(),self.cosine(),self.katz_measure(),self.mean_page_rank(),self.max_page_rank()]
         return res
 
     def set_nodes(self, node_1, node_2):

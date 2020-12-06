@@ -21,7 +21,7 @@ from sklearn.metrics import roc_auc_score
 
 parser = argparse.ArgumentParser(description='Argumetns for the program of similar pair finding')
 parser.add_argument('-d', type=str, default="./results/", help='file path to data directory')
-parser.add_argument('-f', type=str, default="tiny.txt", help='file name of the dataset. Should be an edgelist')
+parser.add_argument('-f', type=str, default="haggle.txt", help='file name of the dataset. Should be an edgelist')
 args = parser.parse_args()
 
 def collect_data(file_path):
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     train,dev,test=split_data(df)
     params=df.columns[:-1]
     possible_settings=[]
-    for r in range(16,len(params)):
+    for r in range(19,len(params)+1):
         for j in itertools.combinations(params,r):
             possible_settings.append(j)
     print("settings to try:",len(possible_settings))

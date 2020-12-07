@@ -25,8 +25,8 @@ class NetworkCharacteristics:
             self.average_degree,
             self.number_of_triangles,
             self.cluster_transitivity,
-            self.connectivity,
-            self.k_components,
+            #self.connectivity,
+            #self.k_components,
             self.average_betweenness_centrality,
             self.average_degree_centrality,
             self.average_eigenvector_centrality,
@@ -210,6 +210,7 @@ class NetworkCharacteristics:
         df_row = []
         for func in self.functions:
             result = func()
+            print(func.__name__)
             df_row.append(result)
         df_row.insert(0, self.timesplit)
         df = df.append(dict(zip(df.columns, df_row)), ignore_index=True)

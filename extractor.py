@@ -19,7 +19,7 @@ import NetworkCharacteristics
 
 parser = argparse.ArgumentParser(description='Argumetns for the program of similar pair finding')
 parser.add_argument('-d', type=str, default="data/", help='file path to data directory')
-parser.add_argument('-f', type=str, default="tiny.txt", help='file name of the dataset. Should be an edgelist')
+parser.add_argument('-f', type=str, default="email_weighted.txt", help='file name of the dataset. Should be an edgelist')
 args = parser.parse_args()
 
 class Extractor:

@@ -191,7 +191,7 @@ class FeatureConstructor:
     def katz_measure(self, beta = 0.85, min_length = 2):
         measure = 0
         try:
-            sp=get_shortest_path_length()
+            sp=len(self.simple_paths[0])-1
         except:
             sp=-1
         if sp >= min_length:

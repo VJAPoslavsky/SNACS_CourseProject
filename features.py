@@ -7,6 +7,7 @@ import random
 import time
 from joblib import Parallel, delayed, parallel_backend
 import multiprocessing
+from itertools import islice
 
 class FeatureConstructor:
     """
@@ -28,6 +29,7 @@ class FeatureConstructor:
         self.core_number_dict = None
         self.simple_paths=None
         self.page_rank= page_rank
+        self.k=5
 
 
         self.attributes_map = {
@@ -175,7 +177,8 @@ class FeatureConstructor:
 
     def get_shortest_path_length(self):
         try:
-            self.simple_paths=list(nx.shortest_simple_paths(self.graph, source=self.node_1, target=self.node_2, weight=None))
+            #self.simple_paths=list(nx.shortest_simple_paths(self.graph, source=self.node_1, target=self.node_2, weight=None))
+            self.simple_paths=list(islice(nx.shortest_simple_paths(self.graph, source=self.node_1, target=self.node_2, weight=None), self.k))
             sp=len(self.simple_paths[0])-1
         except:
             sp=-1

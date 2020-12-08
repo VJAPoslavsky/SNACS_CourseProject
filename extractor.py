@@ -19,7 +19,7 @@ import NetworkCharacteristics
 
 parser = argparse.ArgumentParser(description='Argumetns for the program of similar pair finding')
 parser.add_argument('-d', type=str, default="data/", help='file path to data directory')
-parser.add_argument('-f', type=str, default="email_weighted.txt", help='file name of the dataset. Should be an edgelist')
+parser.add_argument('-f', type=str, default="hashtag_recs_small.txt", help='file name of the dataset. Should be an edgelist')
 args = parser.parse_args()
 
 class Extractor:
@@ -44,7 +44,7 @@ class Extractor:
         #plt.hist(np.array(list(self.graph.edges(data=self.attribute_name))),100)
         #plt.show()
         self.timestamps=np.array(list(self.graph.edges(data=self.attribute_name)))
-        self.timesplit=np.percentile(self.timestamps,90)
+        self.timesplit=np.percentile(self.timestamps[:,2],80)
         self.page_rank=None
         print("Finished loading")
 
@@ -138,6 +138,7 @@ class Extractor:
     def sample(self,attribute_name="timestamp",split_date=0):
         if split_date==0:
             split_date=self.timesplit
+            print(split_date)
         self.train_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t<=split_date]
         self.test_edges = [(x,y) for x,y,t in self.graph.edges(data=attribute_name) if t>split_date]
         self.train_graph.remove_edges_from(self.test_edges)

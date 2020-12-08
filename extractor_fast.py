@@ -44,7 +44,7 @@ class Extractor:
         #plt.hist(np.array(list(self.graph.edges(data=self.attribute_name))),100)
         #plt.show()
         self.timestamps=np.array(list(self.graph.edges(data=self.attribute_name)))
-        self.timesplit=np.percentile(self.timestamps,80)
+        self.timesplit=np.percentile(self.timestamps[:,2],80)
         self.page_rank=None
         print("Finished loading")
 

@@ -1,6 +1,7 @@
 import numpy as np
 import argparse
 import pandas as pd
+import networkx as nx
 #k=np.load("split_0_features.npy")
 #print(k)
 
@@ -17,3 +18,11 @@ args = parser.parse_args()
 #df["weight"] = [1 for i in range(len(df))]
 #df=df.reindex(['0','1','weight', '2'],axis=1)
 #df.to_csv("data\email_weighted.txt", sep=" ", index=False)
+graph_path="data/retweet.txt"
+print("Load graph...")
+f=open(graph_path)
+content=f.read().split("\n")
+#content=[e.split(" ") for e in content]
+print(content[:10])
+graph=nx.read_edgelist(content, delimiter=" ", nodetype=int, data=(('weight',int),('timestamp',int)))
+nx.write_gexf(graph,"retweet.gexf")

@@ -18,10 +18,11 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import precision_score
 
 parser = argparse.ArgumentParser(description='Argumetns for the program of similar pair finding')
 parser.add_argument('-d', type=str, default="./results/", help='file path to data directory')
-parser.add_argument('-f', type=str, default="haggle.txt", help='file name of the dataset. Should be an edgelist')
+parser.add_argument('-f', type=str, default="Haggle.txt", help='file name of the dataset. Should be an edgelist')
 args = parser.parse_args()
 
 def collect_data(file_path):
@@ -60,19 +61,19 @@ def train_classifier(df,k):
 def classify(model,df):
     X,y=df[df.columns[:-1]],df["class"]
     y_pred=model.predict(X)
-    #print(classification_report(y, y_pred, labels=[0,1]))
-    ac=accuracy_score(y, y_pred)
-    pr=recall_score(y, y_pred)
+    print(classification_report(y, y_pred, labels=[0,1]))
+    pc=precision_score(y, y_pred)
+    rc=recall_score(y, y_pred)
     f1=f1_score(y, y_pred)
     a=roc_auc_score(y,y_pred)
-    return ac,pr,f1,a
+    return pc,rc,f1,a
 
 if __name__ == "__main__":
     df=collect_data(args.d+args.f)
     train,dev,test=split_data(df)
     params=df.columns[:-1]
     possible_settings=[]
-    for r in range(19,len(params)+1):
+    for r in range(len(params)-1,len(params)+1):
         for j in itertools.combinations(params,r):
             possible_settings.append(j)
     print("settings to try:",len(possible_settings))
@@ -94,3 +95,4 @@ if __name__ == "__main__":
         c+=1
     df_results=df_settings.join(df_metrics)
     print(df_results)
+    df_results.to_csv(f'{args.f}_classification_results.csv', sep=",", index=False)
